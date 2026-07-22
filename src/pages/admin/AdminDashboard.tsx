@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { ApiService } from '../../services/api';
+import { ApiService, getOptimizedImageUrl } from '../../services/api';
 import { Project, TeamMember, ResearchEntry, MediaItem, ActivityLog, SystemStats } from '../../types';
 import { ProjectEditorModal } from './ProjectEditorPage';
+import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { StatusBadge } from '../../components/common/Badge';
 import {
   Shield, LogOut, Plus, Edit2, Trash2, Eye, EyeOff, Layers, Users, FileText, Image, Activity,
-  Database, RefreshCw, CheckCircle2, AlertCircle, Search, Server, Radio, X
+  Database, RefreshCw, CheckCircle2, AlertCircle, Search, Server, Radio, X, Upload, Folder
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -34,6 +35,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamRole, setNewTeamRole] = useState('');
   const [newTeamDept, setNewTeamDept] = useState('Electronics');
+  const [newTeamImage, setNewTeamImage] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600');
 
   // Research Form Modal state
   const [showResearchModal, setShowResearchModal] = useState(false);
@@ -41,10 +43,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [resCategory, setResCategory] = useState('Hardware');
   const [resSummary, setResSummary] = useState('');
   const [resContent, setResContent] = useState('');
+  const [resThumbnail, setResThumbnail] = useState('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800');
 
-  // Media Upload state
-  const [newMediaTitle, setNewMediaTitle] = useState('');
-  const [newMediaUrl, setNewMediaUrl] = useState('');
+  // Universal Media Picker Modal state
+  const [showPickerModal, setShowPickerModal] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState<'team' | 'research' | 'media_standalone'>('media_standalone');
+  const [pickerFolder, setPickerFolder] = useState<string>('bitvolt/general');
 
   const loadAllData = async () => {
     setLoading(true);
@@ -121,6 +125,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     loadAllData();
   };
 
+  const handlePickerSelectMedia = (item: MediaItem) => {
+    const imageUrl = item.secureUrl || item.url;
+    if (pickerTarget === 'team') {
+      setNewTeamImage(imageUrl);
+    } else if (pickerTarget === 'research') {
+      setResThumbnail(imageUrl);
+    }
+    loadAllData();
+  };
+
   const handleCreateTeamMember = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -130,7 +144,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         department: newTeamDept as any,
         shortBio: 'Engineering contributor',
         detailedBio: 'Contributor to BIT // VOLT engineering projects.',
-        profileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
+        profileImage: newTeamImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
         skills: ['ECE', 'Circuit Design'],
         technologies: ['C++', 'KiCad'],
         expertise: ['Hardware'],
@@ -142,6 +156,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       setShowTeamModal(false);
       setNewTeamName('');
       setNewTeamRole('');
+      setNewTeamImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600');
       loadAllData();
     } catch (err) {
       alert((err as Error).message);
@@ -167,6 +182,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         category: resCategory,
         summary: resSummary,
         content: resContent || '# ' + resTitle + '\n\nResearch content draft.',
+        thumbnail: resThumbnail || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800',
         author: user?.name || 'Lead Engineer',
         date: new Date().toISOString().split('T')[0],
         status: 'Published',
@@ -176,6 +192,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       setResTitle('');
       setResSummary('');
       setResContent('');
+      setResThumbnail('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800');
       loadAllData();
     } catch (err) {
       alert((err as Error).message);
@@ -193,17 +210,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     }
   };
 
-  const handleUploadMedia = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMediaTitle || !newMediaUrl) return;
-    try {
-      await ApiService.uploadMedia({ title: newMediaTitle, url: newMediaUrl, category: 'General' });
-      setNewMediaTitle('');
-      setNewMediaUrl('');
-      loadAllData();
-    } catch (err) {
-      alert((err as Error).message);
-    }
+  const handleUploadMedia = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setPickerTarget('media_standalone');
+    setPickerFolder('bitvolt/general');
+    setShowPickerModal(true);
   };
 
   const handleDeleteMedia = async (id: string) => {
@@ -276,14 +287,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             <span className="text-xl font-bold text-[var(--text-primary)]">{stats.totalTeamMembers}</span>
           </div>
           <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 space-y-1 rounded-sm shadow-sm">
-            <span className="text-[var(--text-muted)] text-[10px] block uppercase font-bold">DATABASE</span>
-            <span className="text-xs font-bold text-[var(--accent-color)] truncate block uppercase">
-              {stats.databaseConnected ? 'MongoDB Atlas' : 'In-Memory DB'}
-            </span>
+            <span className="text-[var(--text-muted)] text-[10px] block uppercase font-bold">RESEARCH PAPERS</span>
+            <span className="text-xl font-bold text-[var(--accent-color)]">{stats.totalResearchPapers}</span>
           </div>
           <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 space-y-1 rounded-sm shadow-sm">
-            <span className="text-[var(--text-muted)] text-[10px] block uppercase font-bold">UPTIME</span>
-            <span className="text-xl font-bold text-sky-400">{stats.systemUptimeSeconds}s</span>
+            <span className="text-[var(--text-muted)] text-[10px] block uppercase font-bold">MEDIA ASSETS</span>
+            <span className="text-xl font-bold text-sky-400">{stats.totalMediaAssets}</span>
           </div>
         </div>
       )}
@@ -512,40 +521,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       {/* MEDIA TAB */}
       {activeTab === 'media' && (
         <div className="space-y-6">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-6 space-y-4 rounded-sm shadow-md">
-            <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase">Register Cloudinary / External Media Asset</h3>
-            <form onSubmit={handleUploadMedia} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <input
-                type="text"
-                placeholder="Asset Title (e.g. PCB Oscilloscope Trace)"
-                value={newMediaTitle}
-                onChange={(e) => setNewMediaTitle(e.target.value)}
-                className="bg-[var(--bg-surface)] border border-[var(--border-color)] p-2.5 text-[var(--text-primary)] rounded-sm"
-              />
-              <input
-                type="url"
-                placeholder="Cloudinary Asset URL"
-                value={newMediaUrl}
-                onChange={(e) => setNewMediaUrl(e.target.value)}
-                className="bg-[var(--bg-surface)] border border-[var(--border-color)] p-2.5 text-[var(--text-primary)] rounded-sm"
-              />
-              <button
-                type="submit"
-                className="bg-[var(--accent-color)] text-black font-bold uppercase rounded-sm"
-              >
-                Save Media Link
-              </button>
-            </form>
+          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-6 space-y-4 rounded-sm shadow-md flex items-center justify-between">
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase flex items-center space-x-2">
+                <Image className="w-4 h-4 text-[#00FF41]" />
+                <span>Cloudinary Media Library Manager</span>
+              </h3>
+              <p className="text-xs text-[var(--text-muted)] font-sans">
+                Upload, manage, search, and preview Cloudinary assets organized in bitvolt/ folders.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setPickerTarget('media_standalone');
+                setPickerFolder('bitvolt/general');
+                setShowPickerModal(true);
+              }}
+              className="px-5 py-2.5 bg-[#00FF41] text-black font-bold uppercase rounded-sm flex items-center space-x-2 hover:bg-[#00e038] transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Open Media Manager</span>
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {media.map((med) => (
               <div key={med.id} className="bg-[var(--bg-card)] border border-[var(--border-color)] p-3 space-y-2 rounded-sm relative group">
-                <img src={med.url} alt={med.title} className="w-full h-32 object-cover rounded-sm" />
-                <p className="font-bold text-[11px] truncate text-[var(--text-primary)]">{med.title}</p>
+                <div className="h-32 bg-[#050505] rounded-sm overflow-hidden flex items-center justify-center">
+                  <img src={getOptimizedImageUrl(med.url || med.secureUrl)} alt={med.title} className="w-full h-full object-cover" />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="font-bold text-[11px] truncate text-[var(--text-primary)]">{med.title}</p>
+                  <p className="text-[9px] text-[#00FF41] font-mono truncate">{med.folder || 'bitvolt/general'}</p>
+                </div>
                 <button
                   onClick={() => handleDeleteMedia(med.id)}
                   className="absolute top-2 right-2 p-1 bg-red-950/80 text-red-300 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Delete Media Asset"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -559,9 +572,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       {activeTab === 'overview' && (
         <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-8 text-center space-y-3 rounded-sm">
           <Radio className="w-10 h-10 text-[var(--accent-color)] mx-auto animate-pulse" />
-          <h2 className="text-xl font-bold uppercase text-[var(--text-primary)]">BIT // VOLT Management Operational</h2>
+          <h2 className="text-xl font-bold uppercase text-[var(--text-primary)]">BIT // VOLT Content Management System</h2>
           <p className="text-[var(--text-muted)] text-xs font-sans max-w-xl mx-auto">
-            Use the navigation tabs above to manage project specs, assign team members, publish research notes, and register Cloudinary media URLs.
+            Use the navigation tabs above to manage project specs, edit team profiles, publish research notes, and attach media assets.
           </p>
         </div>
       )}
@@ -608,6 +621,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 <option value="Software">Software</option>
                 <option value="AI/ML">AI/ML</option>
               </select>
+
+              <div>
+                <label className="block text-[var(--text-muted)] text-[10px] uppercase font-bold mb-1 flex items-center justify-between">
+                  <span>Profile Photo</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPickerTarget('team');
+                      setPickerFolder('bitvolt/team');
+                      setShowPickerModal(true);
+                    }}
+                    className="text-[#00FF41] hover:underline text-[10px] lowercase"
+                  >
+                    Select from Media Library
+                  </button>
+                </label>
+                <input
+                  type="url"
+                  value={newTeamImage}
+                  onChange={(e) => setNewTeamImage(e.target.value)}
+                  placeholder="Profile Image URL"
+                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] p-2 text-[var(--text-primary)] rounded-sm"
+                />
+              </div>
+
               <div className="flex justify-end space-x-2 pt-2">
                 <button
                   type="button"
@@ -649,6 +687,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 <option value="Firmware">Firmware</option>
                 <option value="Software">Software</option>
               </select>
+
+              <div>
+                <label className="block text-[var(--text-muted)] text-[10px] uppercase font-bold mb-1 flex items-center justify-between">
+                  <span>Cover Image</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPickerTarget('research');
+                      setPickerFolder('bitvolt/research');
+                      setShowPickerModal(true);
+                    }}
+                    className="text-[#00FF41] hover:underline text-[10px] lowercase"
+                  >
+                    Select from Media Library
+                  </button>
+                </label>
+                <input
+                  type="url"
+                  value={resThumbnail}
+                  onChange={(e) => setResThumbnail(e.target.value)}
+                  placeholder="Cover Image URL"
+                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] p-2 text-[var(--text-primary)] rounded-sm"
+                />
+              </div>
+
               <textarea
                 placeholder="Summary / Abstract"
                 required
@@ -673,6 +736,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           </div>
         </div>
       )}
+
+      {/* REUSABLE MEDIA PICKER MODAL */}
+      <MediaPickerModal
+        isOpen={showPickerModal}
+        onClose={() => setShowPickerModal(false)}
+        onSelect={handlePickerSelectMedia}
+        defaultFolder={pickerFolder}
+        modalTitle={
+          pickerTarget === 'team'
+            ? 'Select Team Member Profile Image'
+            : pickerTarget === 'research'
+            ? 'Select Research Article Cover Image'
+            : 'Cloudinary Media Manager'
+        }
+      />
     </div>
   );
 };

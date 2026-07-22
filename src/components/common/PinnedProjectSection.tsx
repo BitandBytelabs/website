@@ -243,7 +243,7 @@ export const PinnedProjectSection: React.FC<PinnedProjectSectionProps> = ({ onNa
                 </div>
                 <div className="flex justify-between text-[var(--text-muted)]">
                   <span>Lead Engineers:</span>
-                  <span className="text-[var(--text-primary)]">BIT & VOLT Collective</span>
+                  <span className="text-[var(--text-primary)]">BIT // VOLT Collective</span>
                 </div>
               </div>
             </div>

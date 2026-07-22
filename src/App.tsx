@@ -12,7 +12,6 @@ import { TeamPage } from './pages/TeamPage';
 import { ResearchPage } from './pages/ResearchPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
-import { DocsPage } from './pages/DocsPage';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 
@@ -28,6 +27,29 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // Update Page Title for SEO and Navigation
+  useEffect(() => {
+    if (currentPath === '/' || currentPath === '') {
+      document.title = 'BIT // VOLT — Bits. Signals. Systems.';
+    } else if (currentPath === '/projects') {
+      document.title = 'Engineering Projects — BIT // VOLT';
+    } else if (currentPath.startsWith('/projects/')) {
+      document.title = 'Project Specs — BIT // VOLT';
+    } else if (currentPath === '/team') {
+      document.title = 'The People Behind the Systems — BIT // VOLT';
+    } else if (currentPath === '/research') {
+      document.title = 'Research & Experiments — BIT // VOLT';
+    } else if (currentPath === '/about') {
+      document.title = 'About — BIT // VOLT';
+    } else if (currentPath === '/contact') {
+      document.title = 'Contact — BIT // VOLT';
+    } else if (currentPath.startsWith('/admin')) {
+      document.title = 'Admin CMS — BIT // VOLT';
+    } else {
+      document.title = 'BIT // VOLT — Bits. Signals. Systems.';
+    }
+  }, [currentPath]);
 
   const navigate = (path: string) => {
     window.history.pushState({}, '', path);
@@ -58,9 +80,6 @@ export default function App() {
     }
     if (currentPath === '/contact') {
       return <ContactPage onNavigate={navigate} />;
-    }
-    if (currentPath === '/docs') {
-      return <DocsPage onNavigate={navigate} />;
     }
     if (currentPath === '/admin' || currentPath === '/admin/login') {
       return <AdminLoginPage onNavigate={navigate} />;

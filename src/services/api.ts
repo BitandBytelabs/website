@@ -171,12 +171,20 @@ export const ApiService = {
   },
 
   async getMedia(): Promise<MediaItem[]> {
-    const res = await fetchJson<{ success: boolean; data: MediaItem[] }>(`${API_BASE}/admin/media`);
+    const res = await fetchJson<{ success: boolean; data: MediaItem[] }>(`${API_BASE}/media`);
     return res.data;
   },
 
-  async uploadMedia(data: { title: string; url: string; category?: string }): Promise<MediaItem> {
-    const res = await fetchJson<{ success: boolean; data: MediaItem }>(`${API_BASE}/admin/media`, {
+  async uploadMedia(data: {
+    file?: string;
+    fileDataUrl?: string;
+    dataUrl?: string;
+    url?: string;
+    title?: string;
+    category?: string;
+    folder?: string;
+  }): Promise<MediaItem> {
+    const res = await fetchJson<{ success: boolean; data: MediaItem }>(`${API_BASE}/media/upload`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -184,9 +192,22 @@ export const ApiService = {
   },
 
   async deleteMedia(id: string): Promise<boolean> {
-    const res = await fetchJson<{ success: boolean }>(`${API_BASE}/admin/media/${id}`, {
+    const res = await fetchJson<{ success: boolean }>(`${API_BASE}/media/${id}`, {
       method: 'DELETE',
     });
     return res.success;
   }
 };
+
+/**
+ * Optimizes Cloudinary images by injecting format and quality auto-transformations
+ */
+export function getOptimizedImageUrl(url?: string | null, transform = 'f_auto,q_auto'): string {
+  if (!url) return '';
+  if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
+    if (!url.includes('/f_auto') && !url.includes('/q_auto')) {
+      return url.replace('/upload/', `/upload/${transform}/`);
+    }
+  }
+  return url;
+}

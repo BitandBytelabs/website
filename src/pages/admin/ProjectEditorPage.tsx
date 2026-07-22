@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Project, ProjectCategory, ProjectStatus, TechSpec, ProjectChallenge } from '../../types';
-import { X, Plus, Trash2, Save, FileText, Cpu, Sliders, Layers } from 'lucide-react';
+import { Project, ProjectCategory, ProjectStatus, TechSpec, ProjectChallenge, MediaItem } from '../../types';
+import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
+import { getOptimizedImageUrl } from '../../services/api';
+import { X, Plus, Trash2, Save, FileText, Cpu, Sliders, Layers, Image as ImageIcon } from 'lucide-react';
 
 interface ProjectEditorModalProps {
   project?: Partial<Project> | null;
@@ -18,10 +20,15 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({ project,
   const [fullDescription, setFullDescription] = useState(project?.fullDescription || '');
   const [documentation, setDocumentation] = useState(project?.documentation || '');
   const [thumbnail, setThumbnail] = useState(project?.thumbnail || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800');
+  const [gallery, setGallery] = useState<string[]>(project?.gallery && project.gallery.length > 0 ? project.gallery : [thumbnail]);
   const [githubUrl, setGithubUrl] = useState(project?.githubUrl || '');
   const [demoUrl, setDemoUrl] = useState(project?.demoUrl || '');
   const [published, setPublished] = useState<boolean>(project?.published ?? true);
   const [featured, setFeatured] = useState<boolean>(project?.featured ?? false);
+
+  // Media Picker Modal State
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState<'cover' | 'gallery'>('cover');
 
   // Arrays
   const [technologies, setTechnologies] = useState<string[]>(project?.technologies || ['Electronics', 'C++']);
@@ -68,6 +75,24 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({ project,
     setChallenges([...challenges, { challenge: 'Thermal Jitter', solution: 'Added heat sink.' }]);
   };
 
+  const handleSelectMedia = (item: MediaItem) => {
+    const imageUrl = item.secureUrl || item.url;
+    if (pickerTarget === 'cover') {
+      setThumbnail(imageUrl);
+      if (!gallery.includes(imageUrl)) {
+        setGallery([imageUrl, ...gallery]);
+      }
+    } else {
+      if (!gallery.includes(imageUrl)) {
+        setGallery([...gallery, imageUrl]);
+      }
+    }
+  };
+
+  const handleRemoveGalleryImage = (idx: number) => {
+    setGallery(gallery.filter((_, i) => i !== idx));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -92,7 +117,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({ project,
         software: ['KiCad', 'GCC Toolchain'],
         teamMemberIds: project?.teamMemberIds || ['team-001'],
         startDate: project?.startDate || new Date().toISOString().split('T')[0],
-        gallery: [thumbnail],
+        gallery: gallery.length > 0 ? gallery : [thumbnail],
         videos: [],
         specs,
         keyAchievements: ['System verified in hardware lab testing'],
@@ -226,6 +251,74 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({ project,
               placeholder="In-depth description of design requirements and execution..."
               className="w-full bg-[#0A0A0A] border border-[#222] p-2.5 text-white focus:outline-none focus:border-[#00FF41] font-sans"
             />
+          </div>
+
+          {/* COVER IMAGE & GALLERY */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[#1A1A1A] pt-4">
+            <div>
+              <label className="block text-[#888] mb-1 uppercase font-bold flex items-center justify-between">
+                <span>Project Cover Image *</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPickerTarget('cover');
+                    setPickerOpen(true);
+                  }}
+                  className="text-[#00FF41] hover:underline flex items-center space-x-1 lowercase font-mono text-[11px]"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>Select from Media Library</span>
+                </button>
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="url"
+                  required
+                  value={thumbnail}
+                  onChange={(e) => setThumbnail(e.target.value)}
+                  placeholder="https://res.cloudinary.com/..."
+                  className="flex-1 bg-[#0A0A0A] border border-[#222] p-2.5 text-white focus:outline-none focus:border-[#00FF41]"
+                />
+              </div>
+              {thumbnail && (
+                <div className="mt-2 h-24 bg-[#050505] border border-[#222] rounded-sm overflow-hidden flex items-center justify-center relative">
+                  <img src={getOptimizedImageUrl(thumbnail)} alt="Cover Preview" className="h-full object-cover" />
+                  <span className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 text-[9px] text-[#00FF41]">Cover Preview</span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[#888] uppercase font-bold">Gallery Images ({gallery.length})</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPickerTarget('gallery');
+                    setPickerOpen(true);
+                  }}
+                  className="px-2 py-1 bg-[#1A1A1A] text-[#00FF41] hover:bg-[#222] flex items-center space-x-1 uppercase text-[10px] font-bold rounded-sm"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add from Library</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto p-1 bg-[#0A0A0A] border border-[#222] rounded-sm">
+                {gallery.map((imgUrl, i) => (
+                  <div key={i} className="relative group h-16 bg-[#050505] border border-[#222] rounded-sm overflow-hidden">
+                    <img src={getOptimizedImageUrl(imgUrl)} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGalleryImage(i)}
+                      className="absolute top-1 right-1 p-0.5 bg-red-950/80 text-red-300 opacity-0 group-hover:opacity-100 transition-opacity rounded-sm"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div>
@@ -399,6 +492,14 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({ project,
             </button>
           </div>
         </form>
+
+        <MediaPickerModal
+          isOpen={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onSelect={handleSelectMedia}
+          defaultFolder="bitvolt/projects"
+          modalTitle={pickerTarget === 'cover' ? 'Select Project Cover Image' : 'Select Gallery Image'}
+        />
       </div>
     </div>
   );

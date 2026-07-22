@@ -1,6 +1,6 @@
 {
-  "name": "BIT & VOLT",
-  "description": "Bits. Signals. Systems. Official engineering collective showcase platform.",
+  "name": "BIT // VOLT",
+  "description": "BIT // VOLT is an independent engineering collective building projects across electronics, communication systems, embedded systems, firmware, and software.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

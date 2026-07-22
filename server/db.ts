@@ -103,9 +103,27 @@ const ResearchSchema = new mongoose.Schema<ResearchEntry>({
   updatedAt: { type: String, required: true },
 }, { timestamps: true });
 
+const MediaSchema = new mongoose.Schema<MediaItem>({
+  id: { type: String, required: true, unique: true },
+  title: { type: String, required: true },
+  url: { type: String, required: true },
+  secureUrl: String,
+  cloudinaryPublicId: { type: String, required: true },
+  publicId: String,
+  format: { type: String, required: true },
+  sizeBytes: { type: Number, required: true },
+  width: Number,
+  height: Number,
+  folder: { type: String, default: 'bitvolt/general' },
+  category: { type: String, required: true, default: 'General' },
+  uploadedBy: { type: String, required: true, default: 'Admin' },
+  createdAt: { type: String, required: true },
+}, { timestamps: true });
+
 const ProjectModel = mongoose.models.Project || mongoose.model('Project', ProjectSchema);
 const TeamModel = mongoose.models.Team || mongoose.model('Team', TeamSchema);
 const ResearchModel = mongoose.models.Research || mongoose.model('Research', ResearchSchema);
+const MediaModel = mongoose.models.Media || mongoose.model('Media', MediaSchema);
 
 export async function initDatabase() {
   const uri = process.env.MONGODB_URI;
@@ -355,23 +373,97 @@ export const DbService = {
 
   // MEDIA
   async getMedia(): Promise<MediaItem[]> {
+    if (isMongoConnected) {
+      return await (MediaModel as any).find({}).sort({ createdAt: -1 }).lean();
+    }
     return [...mediaStore];
+  },
+
+  async getMediaById(id: string): Promise<MediaItem | null> {
+    if (isMongoConnected) {
+      return await (MediaModel as any).findOne({ id }).lean();
+    }
+    return mediaStore.find(m => m.id === id) || null;
   },
 
   async addMedia(data: Omit<MediaItem, 'id' | 'createdAt'>): Promise<MediaItem> {
     const item: MediaItem = {
       ...data,
-      id: `med-${Date.now()}`,
+      id: `med-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       createdAt: new Date().toISOString(),
     };
-    mediaStore.unshift(item);
+    if (isMongoConnected) {
+      await (MediaModel as any).create(item);
+    } else {
+      mediaStore.unshift(item);
+    }
     return item;
   },
 
   async deleteMedia(id: string): Promise<boolean> {
-    const initial = mediaStore.length;
-    mediaStore = mediaStore.filter(m => m.id !== id);
-    return mediaStore.length < initial;
+    if (isMongoConnected) {
+      const res = await (MediaModel as any).deleteOne({ id });
+      return res.deletedCount > 0;
+    } else {
+      const initial = mediaStore.length;
+      mediaStore = mediaStore.filter(m => m.id !== id);
+      return mediaStore.length < initial;
+    }
+  },
+
+  async checkMediaInUse(mediaItem: MediaItem): Promise<{ inUse: boolean; usedBy: string[] }> {
+    const projects = await this.getProjects();
+    const team = await this.getTeam(true);
+    const research = await this.getResearch(false);
+
+    const usedBy: string[] = [];
+    const url = mediaItem.url;
+    const secureUrl = mediaItem.secureUrl;
+    const publicId = mediaItem.cloudinaryPublicId || mediaItem.publicId;
+
+    // Helper match function
+    const matches = (targetUrl?: string | null) => {
+      if (!targetUrl) return false;
+      if (targetUrl === url || (secureUrl && targetUrl === secureUrl)) return true;
+      if (publicId && targetUrl.includes(publicId)) return true;
+      return false;
+    };
+
+    // Check Projects
+    projects.forEach(p => {
+      let isUsed = matches(p.thumbnail);
+      if (!isUsed && p.gallery) {
+        isUsed = p.gallery.some(g => matches(g));
+      }
+      if (isUsed) {
+        usedBy.push(`Project: ${p.title}`);
+      }
+    });
+
+    // Check Team Members
+    team.forEach(t => {
+      if (matches(t.profileImage)) {
+        usedBy.push(`Team Member: ${t.name}`);
+      }
+    });
+
+    // Check Research Articles
+    research.forEach(r => {
+      let isUsed = matches(r.thumbnail);
+      if (!isUsed && r.content) {
+        if (url && r.content.includes(url)) isUsed = true;
+        if (secureUrl && r.content.includes(secureUrl)) isUsed = true;
+        if (publicId && r.content.includes(publicId)) isUsed = true;
+      }
+      if (isUsed) {
+        usedBy.push(`Research Entry: ${r.title}`);
+      }
+    });
+
+    return {
+      inUse: usedBy.length > 0,
+      usedBy,
+    };
   },
 
   // ADMIN AUTH & USERS

@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { DbService, addActivityLog } from './db';
 import { AdminRole, AdminUser } from '../src/types';
+import { uploadImageToCloudinary, deleteImageFromCloudinary } from './cloudinary';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'bit_and_volt_super_secret_jwt_key_2026';
 
@@ -59,21 +60,13 @@ export const router = Router();
 
 // --- PUBLIC APIS ---
 
-// Health & Infrastructure Status
+// Health Status
 router.get('/health', async (req, res) => {
   const stats = await DbService.getStats();
   res.json({
     status: 'ok',
-    brand: 'BIT & VOLT',
+    brand: 'BIT // VOLT',
     tagline: 'Bits. Signals. Systems.',
-    uptime: stats.systemUptimeSeconds,
-    database: {
-      type: stats.databaseConnected ? 'MongoDB Atlas (Connected)' : 'In-Memory Reactive DB (Active)',
-      connected: stats.databaseConnected,
-    },
-    cloudinary: {
-      configured: stats.cloudinaryConnected,
-    },
     timestamp: new Date().toISOString(),
   });
 });
@@ -416,76 +409,145 @@ router.delete('/admin/research/:id', requireAuth, requireRole('Super Admin', 'Ad
 
 // --- MEDIA LIBRARY APIS ---
 
-router.get('/admin/media', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const media = await DbService.getMedia();
-  res.json({ success: true, count: media.length, data: media });
-});
-
-router.post('/admin/media', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+async function handleGetMedia(req: AuthenticatedRequest, res: Response) {
   try {
-    const { title, url, category, width, height, sizeBytes } = req.body;
-    if (!title || !url) {
-      res.status(400).json({ success: false, error: 'Title and image URL are required.' });
+    const media = await DbService.getMedia();
+    res.json({ success: true, count: media.length, data: media });
+  } catch (err) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+}
+
+async function handleUploadMedia(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { file, fileDataUrl, dataUrl, url, title, category, folder } = req.body;
+    const payload = file || fileDataUrl || dataUrl || url;
+
+    if (!payload || typeof payload !== 'string') {
+      res.status(400).json({ success: false, error: 'File image payload or data URL is required.' });
       return;
     }
 
+    // Validate image format (JPG/JPEG, PNG, WEBP or valid http/https image URL)
+    const isDataUrl = payload.startsWith('data:');
+    if (isDataUrl) {
+      const mimeMatch = payload.match(/^data:(image\/[a-zA-Z0-9\+\-\.]+);base64,/);
+      if (!mimeMatch) {
+        res.status(400).json({ success: false, error: 'Invalid image format. Must be JPEG, PNG, or WEBP image file.' });
+        return;
+      }
+      const mime = mimeMatch[1].toLowerCase();
+      if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(mime)) {
+        res.status(400).json({ success: false, error: 'Unsupported file format. Allowed formats: JPG, PNG, WEBP.' });
+        return;
+      }
+
+      // Check max size 10MB (base64 length limit approx 14MB)
+      if (payload.length > 14 * 1024 * 1024) {
+        res.status(400).json({ success: false, error: 'File size exceeds maximum 10MB limit.' });
+        return;
+      }
+    }
+
+    // Normalize folder selection (Requirement 4)
+    let targetFolder = folder || 'bitvolt/general';
+    if (!targetFolder.startsWith('bitvolt/')) {
+      targetFolder = `bitvolt/${targetFolder.replace(/^\/+/, '')}`;
+    }
+
+    // Upload to Cloudinary
+    const cloudRes = await uploadImageToCloudinary(payload, targetFolder);
+
+    // Save Cloudinary metadata to DB (Requirement 3)
     const item = await DbService.addMedia({
-      title,
-      url,
-      cloudinaryPublicId: `bit_volt/${category || 'general'}/${Date.now()}`,
-      format: url.split('.').pop()?.toUpperCase() || 'PNG',
-      sizeBytes: sizeBytes || 350000,
-      width: width || 1920,
-      height: height || 1080,
+      title: title || `Asset_${Date.now()}`,
+      url: cloudRes.secureUrl,
+      secureUrl: cloudRes.secureUrl,
+      cloudinaryPublicId: cloudRes.publicId,
+      publicId: cloudRes.publicId,
+      format: cloudRes.format.toUpperCase(),
+      sizeBytes: cloudRes.sizeBytes,
+      width: cloudRes.width,
+      height: cloudRes.height,
+      folder: cloudRes.folder,
       category: category || 'General',
       uploadedBy: req.user?.name || 'Admin',
     });
 
     if (req.user) {
-      addActivityLog(req.user.id, req.user.name, req.user.role, 'UPLOAD_MEDIA', 'MEDIA', item.id, `Uploaded media asset: ${title}`, req.ip);
+      addActivityLog(
+        req.user.id,
+        req.user.name,
+        req.user.role,
+        'UPLOAD_MEDIA',
+        'MEDIA',
+        item.id,
+        `Uploaded media asset '${item.title}' to ${cloudRes.folder}`,
+        req.ip
+      );
     }
 
     res.status(201).json({ success: true, data: item });
   } catch (err) {
     res.status(500).json({ success: false, error: (err as Error).message });
   }
-});
+}
 
-router.delete('/admin/media/:id', requireAuth, requireRole('Super Admin', 'Admin'), async (req: AuthenticatedRequest, res: Response) => {
+async function handleDeleteMedia(req: AuthenticatedRequest, res: Response) {
   try {
-    const deleted = await DbService.deleteMedia(req.params.id);
-    if (!deleted) {
+    const id = req.params.id;
+    const item = await DbService.getMediaById(id);
+    if (!item) {
       res.status(404).json({ success: false, error: 'Media asset not found.' });
       return;
     }
-    if (req.user) {
-      addActivityLog(req.user.id, req.user.name, req.user.role, 'DELETE_MEDIA', 'MEDIA', req.params.id, `Deleted media asset ID ${req.params.id}`, req.ip);
+
+    // Requirement 9: Check whether image is referenced by any Project, Team Member, or Research entry
+    const usage = await DbService.checkMediaInUse(item);
+    if (usage.inUse) {
+      res.status(400).json({
+        success: false,
+        error: `Cannot delete image because it is currently in use by: ${usage.usedBy.join(', ')}. Please remove references before deleting.`,
+        usedBy: usage.usedBy,
+      });
+      return;
     }
-    res.json({ success: true, message: 'Media removed.' });
+
+    // Delete from Cloudinary if publicId exists
+    const publicId = item.cloudinaryPublicId || item.publicId;
+    if (publicId) {
+      await deleteImageFromCloudinary(publicId);
+    }
+
+    // Delete metadata from DB
+    await DbService.deleteMedia(id);
+
+    if (req.user) {
+      addActivityLog(
+        req.user.id,
+        req.user.name,
+        req.user.role,
+        'DELETE_MEDIA',
+        'MEDIA',
+        id,
+        `Deleted media asset '${item.title}'`,
+        req.ip
+      );
+    }
+
+    res.json({ success: true, message: 'Media asset deleted successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, error: (err as Error).message });
   }
-});
+}
 
-// --- DEPLOYMENT GUIDE DOCUMENTATION ---
-router.get('/docs/deployment-guide', (req, res) => {
-  res.json({
-    title: 'BIT & VOLT $0-Budget Production Infrastructure Guide',
-    stack: {
-      frontend: 'React 19 + Vite + Tailwind CSS (Render Static Site Free Tier)',
-      backend: 'Node.js + Express + TypeScript (Render Web Service Free Tier)',
-      database: 'MongoDB Atlas M0 Free Tier (512 MB Cluster)',
-      media: 'Cloudinary Free Tier (25 GB Storage / Bandwidth)',
-      monitoring: 'UptimeRobot Free Tier (5-Minute Ping Keep-Alive)',
-      source: 'GitHub Monorepo Repository'
-    },
-    checklist: [
-      '1. Push repo to GitHub (main branch).',
-      '2. Provision MongoDB Atlas M0 cluster & copy connection string MONGODB_URI.',
-      '3. Create Cloudinary account & save CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET.',
-      '4. Deploy Backend Web Service on Render specifying environment variables.',
-      '5. Deploy Frontend Static Site on Render setting VITE_API_URL to Render backend URL.',
-      '6. Configure UptimeRobot to ping /api/health every 5 minutes to keep Render free tier warm.'
-    ]
-  });
-});
+// Support both /api/media and /api/admin/media
+router.get('/media', requireAuth, handleGetMedia);
+router.get('/admin/media', requireAuth, handleGetMedia);
+
+router.post('/media/upload', requireAuth, handleUploadMedia);
+router.post('/admin/media/upload', requireAuth, handleUploadMedia);
+router.post('/admin/media', requireAuth, handleUploadMedia);
+
+router.delete('/media/:id', requireAuth, requireRole('Super Admin', 'Admin'), handleDeleteMedia);
+router.delete('/admin/media/:id', requireAuth, requireRole('Super Admin', 'Admin'), handleDeleteMedia);

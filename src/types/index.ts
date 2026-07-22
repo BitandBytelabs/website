@@ -127,11 +127,14 @@ export interface MediaItem {
   id: string;
   title: string;
   url: string;
+  secureUrl?: string;
   cloudinaryPublicId: string;
+  publicId?: string;
   format: string;
   sizeBytes: number;
   width?: number;
   height?: number;
+  folder?: string;
   category: 'Schematic' | 'PCB' | 'Diagram' | 'Prototype' | 'Video' | 'General';
   uploadedBy: string;
   createdAt: string;
