@@ -38,43 +38,43 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({ onNavigate }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
       {/* HEADER */}
-      <div className="border-b border-[#1A1A1A] pb-6 space-y-2">
-        <div className="inline-flex items-center space-x-2 text-xs font-mono text-[#00FF41] uppercase tracking-widest">
+      <div className="border-b border-[var(--border-color)] pb-6 space-y-2">
+        <div className="inline-flex items-center space-x-2 text-xs font-mono text-[var(--accent-color)] uppercase tracking-widest font-bold">
           <Radio className="w-3.5 h-3.5" />
           <span>LABORATORY INVESTIGATIONS & TECHNICAL PAPERS</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight uppercase">
+        <h1 className="text-3xl sm:text-4xl font-extrabold font-mono text-[var(--text-primary)] tracking-tight uppercase">
           Research & Experiment Notes
         </h1>
-        <p className="text-[#888] text-sm font-sans max-w-2xl leading-relaxed">
-          Technical investigations, RF measurements, firmware optimization benchmarks, and circuit design analyses authored by BIT & VOLT engineers.
+        <p className="text-[var(--text-muted)] text-sm font-sans max-w-2xl leading-relaxed">
+          Technical investigations, RF measurements, firmware optimization benchmarks, and circuit design analyses authored by BIT // VOLT engineers.
         </p>
       </div>
 
       {/* SEARCH BAR */}
-      <div className="bg-[#0D0D0D] border border-[#1A1A1A] p-4 flex items-center justify-between">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 flex items-center justify-between rounded-sm shadow-md">
         <div className="relative w-full max-w-md">
-          <Search className="w-4 h-4 text-[#666] absolute left-3 top-3" />
+          <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-3" />
           <input
             type="text"
             placeholder="Search research papers, tags, or topics..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#0A0A0A] border border-[#222] pl-9 pr-4 py-2 text-xs font-mono text-white placeholder-[#555] focus:outline-none focus:border-[#00FF41]"
+            className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] pl-9 pr-4 py-2 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-color)] rounded-sm"
           />
         </div>
-        <div className="text-xs font-mono text-[#888] hidden sm:block uppercase">
+        <div className="text-xs font-mono text-[var(--text-muted)] hidden sm:block uppercase font-bold">
           {filtered.length} RESEARCH PAPERS AVAILABLE
         </div>
       </div>
 
       {/* RESEARCH CARDS GRID */}
       {loading ? (
-        <div className="p-12 text-center text-[#888] font-mono text-sm">
+        <div className="p-12 text-center text-[var(--text-muted)] font-mono text-sm bg-[var(--bg-card)] border border-[var(--border-color)] rounded-sm">
           Loading research papers...
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-[#0D0D0D] border border-[#1A1A1A] p-12 text-center text-[#888] font-mono text-sm">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-12 text-center text-[var(--text-muted)] font-mono text-sm rounded-sm">
           No research articles found matching your query.
         </div>
       ) : (
@@ -82,11 +82,11 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({ onNavigate }) => {
           {filtered.map((item) => (
             <div
               key={item.id}
-              className="bg-[#0D0D0D] border border-[#1A1A1A] p-6 space-y-4 hover:border-[#00FF41]/50 transition-all shadow-xl flex flex-col justify-between"
+              className="bg-[var(--bg-card)] border border-[var(--border-color)] p-6 space-y-4 hover:border-[var(--accent-color)] transition-all shadow-md flex flex-col justify-between rounded-sm"
             >
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs font-mono text-[#888]">
-                  <span className="px-2.5 py-1 bg-[#0A0A0A] text-[#00FF41] border border-[#00FF41]/40 uppercase font-bold text-[10px]">
+                <div className="flex items-center justify-between text-xs font-mono text-[var(--text-muted)]">
+                  <span className="px-2.5 py-1 bg-[var(--bg-surface)] text-[var(--accent-color)] border border-[var(--border-color)] uppercase font-bold text-[10px] rounded-sm">
                     {item.category}
                   </span>
                   <span className="flex items-center space-x-1">
@@ -95,33 +95,30 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({ onNavigate }) => {
                   </span>
                 </div>
 
-                <h3 className="text-lg font-bold font-mono text-white hover:text-[#00FF41] transition-colors uppercase">
+                <h3 className="text-lg font-bold font-mono text-[var(--text-primary)] hover:text-[var(--accent-color)] transition-colors uppercase">
                   {item.title}
                 </h3>
 
-                <p className="text-xs sm:text-sm text-[#AAA] font-sans leading-relaxed">
+                <p className="text-xs text-[var(--text-muted)] font-sans leading-relaxed line-clamp-3">
                   {item.summary}
                 </p>
 
                 {/* TAGS */}
                 <div className="flex flex-wrap gap-1.5 pt-2">
-                  {item.tags.map((tag, idx) => (
-                    <span key={idx} className="px-2 py-0.5 text-[10px] font-mono bg-[#141414] text-[#888] border border-[#222]">
-                      #{tag}
+                  {item.tags.map((tg, idx) => (
+                    <span key={idx} className="px-2 py-0.5 text-[10px] font-mono bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-color)] rounded-sm">
+                      #{tg}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#1A1A1A] flex items-center justify-between font-mono text-xs">
-                <div className="flex items-center space-x-1.5 text-[#888]">
-                  <User className="w-3.5 h-3.5 text-[#00FF41]" />
-                  <span>{item.author}</span>
-                </div>
-
+              {/* CARD FOOTER */}
+              <div className="pt-4 border-t border-[var(--border-color)] flex items-center justify-between font-mono text-xs">
+                <span className="text-[var(--text-muted)]">Author: {item.author}</span>
                 <button
                   onClick={() => setSelectedEntry(item)}
-                  className="px-3 py-1.5 bg-[#00FF41]/10 text-[#00FF41] border border-[#00FF41]/40 hover:bg-[#00FF41]/20 font-bold transition-all flex items-center space-x-1 uppercase text-[11px]"
+                  className="text-[var(--accent-color)] font-bold hover:underline uppercase flex items-center space-x-1"
                 >
                   <span>READ PAPER</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -132,42 +129,34 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* FULL RESEARCH PAPER MODAL */}
+      {/* FULL RESEARCH MODAL / VIEWER */}
       {selectedEntry && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0D0D0D] border border-[#1A1A1A] max-w-3xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 sm:p-10 space-y-6 rounded-sm shadow-2xl relative my-8">
             <button
               onClick={() => setSelectedEntry(null)}
-              className="absolute top-4 right-4 p-2 bg-[#1A1A1A] text-[#888] hover:text-white"
+              className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-2"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
 
-            <div className="space-y-2 border-b border-[#1A1A1A] pb-4 font-mono">
-              <span className="px-2.5 py-1 bg-[#0A0A0A] text-[#00FF41] border border-[#00FF41]/40 text-xs font-bold uppercase">
+            <div className="space-y-3 border-b border-[var(--border-color)] pb-6 font-mono">
+              <span className="px-3 py-1 bg-[var(--bg-card)] text-[var(--accent-color)] border border-[var(--border-color)] uppercase font-bold text-xs">
                 {selectedEntry.category}
               </span>
-              <h2 className="text-2xl font-bold text-white mt-2 uppercase">{selectedEntry.title}</h2>
-              <div className="text-xs text-[#888] flex items-center space-x-4 pt-1">
-                <span>By: {selectedEntry.author} ({selectedEntry.authorRole || 'Engineer'})</span>
-                <span>Date: {selectedEntry.date}</span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] uppercase">
+                {selectedEntry.title}
+              </h2>
+              <div className="flex flex-wrap gap-4 text-xs text-[var(--text-muted)] pt-1">
+                <span>AUTHOR: {selectedEntry.author}</span>
+                <span>DATE: {selectedEntry.date}</span>
               </div>
             </div>
 
             {/* CONTENT */}
-            <MarkdownViewer content={selectedEntry.content} />
-
-            {/* REFERENCES */}
-            {selectedEntry.references && selectedEntry.references.length > 0 && (
-              <div className="pt-4 border-t border-[#1A1A1A] font-mono text-xs space-y-2">
-                <span className="font-bold text-white block uppercase">Citations & References:</span>
-                <ul className="list-disc ml-5 space-y-1 text-[#888]">
-                  {selectedEntry.references.map((ref, idx) => (
-                    <li key={idx}>{ref}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <div className="prose prose-invert max-w-none text-xs sm:text-sm font-sans leading-relaxed text-[var(--text-secondary)]">
+              <MarkdownViewer content={selectedEntry.content} />
+            </div>
           </div>
         </div>
       )}

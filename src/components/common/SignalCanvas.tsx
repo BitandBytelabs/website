@@ -152,23 +152,23 @@ export const SignalCanvas: React.FC = () => {
   }, [carrierFreq, modDepth, audioFreq, showFFT]);
 
   return (
-    <div className="bg-[#0D0D0D] border border-[#1A1A1A] overflow-hidden shadow-2xl font-mono">
+    <div className="bg-[var(--bg-card)] border border-[var(--border-color)] overflow-hidden shadow-2xl font-mono rounded-sm">
       {/* Header bar */}
-      <div className="bg-[#0F0F0F] border-b border-[#1A1A1A] px-4 py-2.5 flex items-center justify-between">
+      <div className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Radio className="w-4 h-4 text-[#00FF41] animate-pulse" />
-          <span className="text-xs font-mono font-bold text-white tracking-wider uppercase">
+          <Radio className="w-4 h-4 text-[var(--accent-color)] animate-pulse" />
+          <span className="text-xs font-mono font-bold text-[var(--text-primary)] tracking-wider uppercase">
             BIT // VOLT Signal Laboratory — RF AM Visualizer
           </span>
         </div>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowFFT(!showFFT)}
-            className={`px-2.5 py-1 text-[11px] font-mono transition-colors flex items-center space-x-1 uppercase font-bold ${
-              showFFT ? 'bg-[#FFB800]/20 text-[#FFB800] border border-[#FFB800]/40' : 'bg-[#1A1A1A] text-[#888] hover:text-white border border-[#2A2A2A]'
+            className={`px-2.5 py-1 text-[11px] font-mono transition-colors flex items-center space-x-1 uppercase font-bold rounded-sm ${
+              showFFT ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-color)]'
             }`}
           >
-            <Activity className="w-3 h-3 text-[#00FF41]" />
+            <Activity className="w-3 h-3 text-[var(--accent-color)]" />
             <span>{showFFT ? 'Oscilloscope' : 'FFT Spectrum'}</span>
           </button>
         </div>
@@ -182,17 +182,17 @@ export const SignalCanvas: React.FC = () => {
           height={260}
           className="w-full h-[220px] sm:h-[260px] block cursor-crosshair"
         />
-        <div className="absolute bottom-2 right-3 text-[10px] font-mono text-[#555] pointer-events-none uppercase">
+        <div className="absolute bottom-2 right-3 text-[10px] font-mono text-[var(--accent-color)]/70 pointer-events-none uppercase">
           SAMPLING RATE: 100 MSPS | 50Ω IMPEDANCE
         </div>
       </div>
 
       {/* Interactive Controls */}
-      <div className="bg-[#0F0F0F] border-t border-[#1A1A1A] px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+      <div className="bg-[var(--bg-surface)] border-t border-[var(--border-color)] px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
         <div>
-          <div className="flex justify-between text-[#888] mb-1">
+          <div className="flex justify-between text-[var(--text-muted)] mb-1">
             <span>Carrier Freq (MHz)</span>
-            <span className="text-[#00FF41] font-bold">{carrierFreq.toFixed(3)}</span>
+            <span className="text-[var(--accent-color)] font-bold">{carrierFreq.toFixed(3)}</span>
           </div>
           <input
             type="range"
@@ -201,14 +201,14 @@ export const SignalCanvas: React.FC = () => {
             step="0.005"
             value={carrierFreq}
             onChange={(e) => setCarrierFreq(parseFloat(e.target.value))}
-            className="w-full accent-[#00FF41] bg-[#1A1A1A] h-1.5"
+            className="w-full accent-[var(--accent-color)] bg-[var(--border-color)] h-1.5"
           />
         </div>
 
         <div>
-          <div className="flex justify-between text-[#888] mb-1">
+          <div className="flex justify-between text-[var(--text-muted)] mb-1">
             <span>Modulation Depth (%)</span>
-            <span className="text-[#FFB800] font-bold">{modDepth}%</span>
+            <span className="text-amber-500 font-bold">{modDepth}%</span>
           </div>
           <input
             type="range"
@@ -217,14 +217,14 @@ export const SignalCanvas: React.FC = () => {
             step="1"
             value={modDepth}
             onChange={(e) => setModDepth(parseInt(e.target.value))}
-            className="w-full accent-[#FFB800] bg-[#1A1A1A] h-1.5"
+            className="w-full accent-amber-500 bg-[var(--border-color)] h-1.5"
           />
         </div>
 
         <div>
-          <div className="flex justify-between text-[#888] mb-1">
+          <div className="flex justify-between text-[var(--text-muted)] mb-1">
             <span>Audio Tone (Hz)</span>
-            <span className="text-white font-bold">{audioFreq} Hz</span>
+            <span className="text-[var(--text-primary)] font-bold">{audioFreq} Hz</span>
           </div>
           <input
             type="range"
@@ -233,7 +233,7 @@ export const SignalCanvas: React.FC = () => {
             step="100"
             value={audioFreq}
             onChange={(e) => setAudioFreq(parseInt(e.target.value))}
-            className="w-full accent-white bg-[#1A1A1A] h-1.5"
+            className="w-full accent-[var(--text-primary)] bg-[var(--border-color)] h-1.5"
           />
         </div>
       </div>

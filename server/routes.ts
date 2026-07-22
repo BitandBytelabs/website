@@ -398,6 +398,22 @@ router.post('/admin/research', requireAuth, requireRole('Super Admin', 'Admin', 
   }
 });
 
+router.delete('/admin/research/:id', requireAuth, requireRole('Super Admin', 'Admin'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const deleted = await DbService.deleteResearch(req.params.id);
+    if (!deleted) {
+      res.status(404).json({ success: false, error: 'Research article not found.' });
+      return;
+    }
+    if (req.user) {
+      addActivityLog(req.user.id, req.user.name, req.user.role, 'DELETE_RESEARCH', 'RESEARCH', req.params.id, `Deleted research paper ID ${req.params.id}`, req.ip);
+    }
+    res.json({ success: true, message: 'Research paper deleted.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
 // --- MEDIA LIBRARY APIS ---
 
 router.get('/admin/media', requireAuth, async (req: AuthenticatedRequest, res: Response) => {

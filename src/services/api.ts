@@ -163,6 +163,13 @@ export const ApiService = {
     return res.data;
   },
 
+  async deleteResearch(id: string): Promise<boolean> {
+    const res = await fetchJson<{ success: boolean }>(`${API_BASE}/admin/research/${id}`, {
+      method: 'DELETE',
+    });
+    return res.success;
+  },
+
   async getMedia(): Promise<MediaItem[]> {
     const res = await fetchJson<{ success: boolean; data: MediaItem[] }>(`${API_BASE}/admin/media`);
     return res.data;

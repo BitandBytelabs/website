@@ -69,41 +69,42 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({ onNavigate }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
       {/* HEADER */}
-      <div className="border-b border-[#1A1A1A] pb-6 space-y-2">
-        <div className="inline-flex items-center space-x-2 text-xs font-mono text-[#00FF41] uppercase tracking-widest">
+      <div className="border-b border-[var(--border-color)] pb-6 space-y-2">
+        <div className="inline-flex items-center space-x-2 text-xs font-mono text-[var(--accent-color)] uppercase tracking-widest font-bold">
           <Radio className="w-3.5 h-3.5" />
           <span>PROJECT REPOSITORY & TECHNICAL SHOWCASE</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight uppercase">
+        <h1 className="text-3xl sm:text-4xl font-extrabold font-mono text-[var(--text-primary)] tracking-tight uppercase">
           Engineering Projects Catalog
         </h1>
-        <p className="text-[#888] text-sm font-sans max-w-2xl leading-relaxed">
-          Comprehensive catalog of BIT & VOLT systems spanning physical RF communication hardware, embedded firmware, robotics, and software architectures.
+        <p className="text-[var(--text-muted)] text-sm font-sans max-w-2xl leading-relaxed">
+          Comprehensive catalog of BIT // VOLT systems spanning physical RF communication hardware, embedded firmware, robotics, and software architectures.
         </p>
       </div>
 
       {/* SEARCH AND FILTERS */}
-      <div className="bg-[#0D0D0D] border border-[#1A1A1A] p-4 space-y-4">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 space-y-4 rounded-sm shadow-md">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* SEARCH INPUT */}
           <div className="relative w-full md:w-96">
-            <Search className="w-4 h-4 text-[#666] absolute left-3 top-3" />
+            <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-3" />
             <input
               type="text"
               placeholder="Search by title, component, or tech..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#0A0A0A] border border-[#222] pl-9 pr-4 py-2 text-xs font-mono text-white placeholder-[#555] focus:outline-none focus:border-[#00FF41]"
+              className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] pl-9 pr-4 py-2 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-color)] rounded-sm"
             />
           </div>
 
           {/* VIEW MODE TOGGLE */}
-          <div className="flex items-center space-x-2 text-xs font-mono text-[#888] self-end md:self-auto">
-            <span>SHOW:</span>
+          <div className="flex items-center space-x-2 self-end md:self-auto">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 border ${
-                viewMode === 'grid' ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]/50' : 'bg-[#0A0A0A] border-[#222] text-[#888] hover:text-white'
+              className={`p-2 border text-xs font-mono rounded-sm transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-[var(--accent-color)] text-black border-[var(--accent-color)] font-bold'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-primary)]'
               }`}
               title="Grid View"
             >
@@ -111,80 +112,80 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({ onNavigate }) => {
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`p-1.5 border ${
-                viewMode === 'table' ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]/50' : 'bg-[#0A0A0A] border-[#222] text-[#888] hover:text-white'
+              className={`p-2 border text-xs font-mono rounded-sm transition-colors ${
+                viewMode === 'table'
+                  ? 'bg-[var(--accent-color)] text-black border-[var(--accent-color)] font-bold'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-primary)]'
               }`}
-              title="Dense Systems Table View"
+              title="Table/List View"
             >
               <List className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* CATEGORY TABS */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#1A1A1A]">
-          <span className="text-xs font-mono text-[#666] mr-2 flex items-center space-x-1">
-            <Filter className="w-3 h-3" />
-            <span>Category:</span>
-          </span>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategoryFilter(cat)}
-              className={`px-2.5 py-1 text-xs font-mono uppercase transition-colors ${
-                categoryFilter === cat
-                  ? 'bg-[#00FF41] text-black border border-[#00FF41] font-bold'
-                  : 'bg-[#0A0A0A] text-[#888] hover:text-white border border-[#222]'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {/* CATEGORY & STATUS CHIPS */}
+        <div className="space-y-3 pt-2 border-t border-[var(--border-color)]">
+          {/* Categories */}
+          <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+            <span className="text-[10px] font-mono uppercase text-[var(--text-muted)] shrink-0 font-bold">
+              Category:
+            </span>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategoryFilter(cat)}
+                className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider whitespace-nowrap rounded-sm transition-all ${
+                  categoryFilter === cat
+                    ? 'bg-[var(--accent-color)] text-black font-bold'
+                    : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-color)] hover:border-[var(--accent-color)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
 
-        {/* STATUS TABS */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <span className="text-xs font-mono text-[#666] mr-2">Status:</span>
-          {statuses.map((st) => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-2 py-0.5 text-[11px] font-mono uppercase transition-colors ${
-                statusFilter === st
-                  ? 'bg-[#FFB800] text-black border border-[#FFB800] font-bold'
-                  : 'bg-[#0A0A0A] text-[#888] hover:text-white border border-[#222]'
-              }`}
-            >
-              {st}
-            </button>
-          ))}
+          {/* Statuses */}
+          <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+            <span className="text-[10px] font-mono uppercase text-[var(--text-muted)] shrink-0 font-bold">
+              Status:
+            </span>
+            {statuses.map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider whitespace-nowrap rounded-sm transition-all ${
+                  statusFilter === st
+                    ? 'bg-amber-500 text-black font-bold'
+                    : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-color)] hover:border-amber-500 hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* METRIC BADGE SUMMARY */}
-      <div className="flex items-center justify-between text-xs font-mono text-[#888]">
-        <span>SHOWING {projects.length} ENGINEERING SYSTEMS</span>
-        {searchTerm && <span>FILTERED BY "{searchTerm}"</span>}
-      </div>
-
-      {/* PROJECT LISTINGS */}
+      {/* PROJECT RESULTS DISPLAY */}
       {loading ? (
-        <div className="bg-[#0D0D0D] border border-[#1A1A1A] p-12 text-center text-[#888] font-mono text-sm space-y-2">
-          <div className="w-6 h-6 border-2 border-[#00FF41] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p>Querying database...</p>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-12 text-center text-[var(--text-muted)] font-mono text-sm rounded-sm">
+          Searching project repository...
         </div>
       ) : projects.length === 0 ? (
-        <div className="bg-[#0D0D0D] border border-[#1A1A1A] p-12 text-center text-[#888] font-mono text-sm space-y-3">
-          <p>No engineering projects matched the selected filters.</p>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-12 text-center space-y-3 rounded-sm">
+          <p className="text-[var(--text-primary)] font-mono text-base font-bold uppercase">No projects match query filters.</p>
+          <p className="text-[var(--text-muted)] text-xs font-mono">Try adjusting search term or resetting category filters.</p>
           <button
             onClick={() => {
               setCategoryFilter('All');
               setStatusFilter('All');
               setSearchTerm('');
             }}
-            className="px-4 py-2 text-xs font-mono bg-[#00FF41]/10 text-[#00FF41] border border-[#00FF41]/40 uppercase font-bold"
+            className="px-4 py-2 bg-[var(--accent-color)] text-black font-bold font-mono text-xs uppercase tracking-wider rounded-sm mt-2"
           >
-            Reset All Filters
+            Reset Filters
           </button>
         </div>
       ) : viewMode === 'grid' ? (
@@ -198,37 +199,44 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({ onNavigate }) => {
           ))}
         </div>
       ) : (
-        /* DENSE SYSTEMS TABLE VIEW */
-        <div className="bg-[#0D0D0D] border border-[#1A1A1A] overflow-x-auto shadow-lg">
-          <table className="w-full text-left font-mono text-xs text-[#E0E0E0]">
-            <thead className="bg-[#0F0F0F] border-b border-[#1A1A1A] text-[#888] uppercase text-[10px]">
-              <tr>
-                <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Project Title</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Key Hardware</th>
-                <th className="px-4 py-3 text-right">Action</th>
+        /* TABLE VIEW */
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] overflow-x-auto rounded-sm shadow-md">
+          <table className="w-full text-left border-collapse font-mono text-xs">
+            <thead>
+              <tr className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] text-[var(--text-muted)] uppercase text-[10px]">
+                <th className="p-3 font-bold">ID</th>
+                <th className="p-3 font-bold">Project Name</th>
+                <th className="p-3 font-bold">Category</th>
+                <th className="p-3 font-bold">Status</th>
+                <th className="p-3 font-bold">Technologies</th>
+                <th className="p-3 text-right font-bold">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1A1A1A]">
+            <tbody className="divide-y divide-[var(--border-color)]">
               {projects.map((proj) => (
-                <tr key={proj.id} className="hover:bg-[#141414] transition-colors">
-                  <td className="px-4 py-3 font-bold text-[#00FF41]">PROJ #{proj.projectNumber}</td>
-                  <td className="px-4 py-3 font-semibold text-white uppercase">{proj.title}</td>
-                  <td className="px-4 py-3 text-[#888]">{proj.category}</td>
-                  <td className="px-4 py-3">
+                <tr
+                  key={proj.id}
+                  onClick={() => onNavigate(`/projects/${proj.slug}`)}
+                  className="hover:bg-[var(--bg-card-hover)] cursor-pointer transition-colors"
+                >
+                  <td className="p-3 text-[var(--accent-color)] font-bold">PRJ-{proj.projectNumber}</td>
+                  <td className="p-3 text-[var(--text-primary)] font-bold uppercase">{proj.title}</td>
+                  <td className="p-3 text-[var(--text-muted)]">{proj.category}</td>
+                  <td className="p-3">
                     <StatusBadge status={proj.status} size="sm" />
                   </td>
-                  <td className="px-4 py-3 text-[#888] max-w-xs truncate">
-                    {proj.hardware.slice(0, 2).join(', ')}
+                  <td className="p-3">
+                    <div className="flex flex-wrap gap-1">
+                      {proj.technologies.slice(0, 3).map((t, idx) => (
+                        <span key={idx} className="px-1.5 py-0.5 text-[9px] bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-color)] rounded-sm">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => onNavigate(`/projects/${proj.slug}`)}
-                      className="text-[#00FF41] hover:underline font-bold inline-flex items-center space-x-1 uppercase"
-                    >
-                      <span>SPEC</span>
+                  <td className="p-3 text-right">
+                    <button className="text-[var(--accent-color)] font-bold hover:underline inline-flex items-center space-x-1 uppercase text-[10px]">
+                      <span>View</span>
                       <ArrowRight className="w-3 h-3" />
                     </button>
                   </td>

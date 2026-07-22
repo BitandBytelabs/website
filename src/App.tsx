@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 
@@ -73,14 +74,17 @@ export default function App() {
   };
 
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-[#0A0A0A] bg-dot-grid text-[#E0E0E0] flex flex-col font-sans selection:bg-[#00FF41] selection:text-black relative">
-        <Navbar currentPath={currentPath} onNavigate={navigate} />
-        <main className="flex-1">
-          {renderContent()}
-        </main>
-        <Footer onNavigate={navigate} />
-      </div>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <div className="min-h-screen bg-[var(--bg-color)] bg-dot-grid text-[var(--text-secondary)] flex flex-col font-sans selection:bg-[#00FF41] selection:text-black relative transition-colors duration-200">
+          <Navbar currentPath={currentPath} onNavigate={navigate} />
+          <main className="flex-1">
+            {renderContent()}
+          </main>
+          <Footer onNavigate={navigate} />
+        </div>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
+

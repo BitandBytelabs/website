@@ -110,16 +110,24 @@ const ResearchModel = mongoose.models.Research || mongoose.model('Research', Res
 export async function initDatabase() {
   const uri = process.env.MONGODB_URI;
   if (uri && uri.trim().length > 0) {
+    console.log('MongoDB URI configured: true');
+    console.log('Connecting to MongoDB Atlas...');
     try {
-      await mongoose.connect(uri, { serverSelectionTimeoutMS: 3000 });
+      await mongoose.connect(uri, {
+        dbName: 'bitvolt',
+        serverSelectionTimeoutMS: 5000,
+      });
       isMongoConnected = true;
-      console.log('✅ Connected to MongoDB Atlas Free Tier successfully');
+      console.log('MongoDB Atlas connected successfully.');
     } catch (err) {
-      console.warn('⚠️ MongoDB Atlas connection failed or timed out. Operating in high-performance reactive in-memory mode.', (err as Error).message);
+      console.log(`MongoDB Atlas connection failed: ${(err as Error).message}`);
+      console.log('Operating in high-performance reactive in-memory mode.');
       isMongoConnected = false;
     }
   } else {
-    console.log('ℹ️ MONGODB_URI not set. Running in zero-config reactive in-memory database mode.');
+    console.log('MongoDB URI configured: false');
+    console.log('MONGODB_URI not configured. Using in-memory database.');
+    isMongoConnected = false;
   }
 }
 
@@ -332,6 +340,17 @@ export const DbService = {
       researchStore.unshift(newRes);
     }
     return newRes;
+  },
+
+  async deleteResearch(id: string): Promise<boolean> {
+    if (isMongoConnected) {
+      const res = await (ResearchModel as any).deleteOne({ id });
+      return res.deletedCount > 0;
+    } else {
+      const initial = researchStore.length;
+      researchStore = researchStore.filter(r => r.id !== id);
+      return researchStore.length < initial;
+    }
   },
 
   // MEDIA
